@@ -107,7 +107,8 @@ export default class ReactAddToCalendar extends React.Component {
             href={helpers.buildUrl(
               self.props.event,
               currentItem,
-              self.state.isCrappyIE
+              self.state.isCrappyIE,
+              self.props.useDateTime
             )}
             target="_blank"
           >
@@ -222,7 +223,6 @@ ReactAddToCalendar.propTypes = {
 ReactAddToCalendar.defaultProps = {
   buttonClassClosed: "react-add-to-calendar__button",
   buttonClassOpen: "react-add-to-calendar__button--light",
-  useDateTime: false,
   buttonLabel: "Add to My Calendar",
   buttonTemplate: { caret: "right" },
   buttonIconClass: "react-add-to-calendar__icon--",
@@ -231,6 +231,7 @@ ReactAddToCalendar.defaultProps = {
   displayItemIcons: true,
   optionsOpen: false,
   dropdownClass: "react-add-to-calendar__dropdown",
+  useDateTime: false,
   event: {
     title: "Sample Event",
     description: "This is the sample event provided as an example only",

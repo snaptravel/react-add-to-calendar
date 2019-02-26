@@ -187,7 +187,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            {
 	              className: currentItem + "-link",
 	              onClick: self.handleDropdownLinkClick,
-	              href: helpers.buildUrl(self.props.event, currentItem, self.state.isCrappyIE),
+	              href: helpers.buildUrl(self.props.event, currentItem, self.state.isCrappyIE, self.props.useDateTime),
 	              target: "_blank"
 	            },
 	            icon,
@@ -305,7 +305,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	ReactAddToCalendar.defaultProps = {
 	  buttonClassClosed: "react-add-to-calendar__button",
 	  buttonClassOpen: "react-add-to-calendar__button--light",
-	  useDateTime: false,
 	  buttonLabel: "Add to My Calendar",
 	  buttonTemplate: { caret: "right" },
 	  buttonIconClass: "react-add-to-calendar__icon--",
@@ -314,6 +313,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  displayItemIcons: true,
 	  optionsOpen: false,
 	  dropdownClass: "react-add-to-calendar__dropdown",
+	  useDateTime: false,
 	  event: {
 	    title: "Sample Event",
 	    description: "This is the sample event provided as an example only",
@@ -486,14 +486,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: "formatEndDate",
 	    value: function formatEndDate(date) {
-	      // Extra day is added because an event from 20180101-20190102
+	      // Extra day is added because an event from 20180101-20190102 
 	      //   is considered a single all day event for Jan 1 as a opposed to event that's 2 days
 	      var formattedDate = _moment2.default.utc(date).add(1, 'd').format("YYYYMMDD");
 	      return formattedDate;
 	    }
 	  }, {
-	    key: "formatTime",
-	    value: function formatTime(datetime) {
+	    key: "formatDateTime",
+	    value: function formatDateTime(datetime) {
 	      var formattedDateTime = _moment2.default.utc(datetime).format("YYYYMMDDTHHmmssZ");
 	      return formattedDateTime.replace("+00:00", "Z");
 	    }
@@ -514,7 +514,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }, {
 	    key: "buildUrl",
-	    value: function buildUrl(event, type, isCrappyIE) {
+	    value: function buildUrl(event, type, isCrappyIE, useDateTime) {
 	      var calendarUrl = "";
 	      var formattedDescription = "";
 	      // allow mobile browsers to open the gmail data URI within native calendar app
@@ -526,8 +526,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          formattedDescription = event.googleDescription ? event.googleDescription : event.description;
 	          calendarUrl = "https://calendar.google.com/calendar/render";
 	          calendarUrl += "?action=TEMPLATE";
-	          calendarUrl +=  true ? this.formatStartDate(event.startTime) : this.formatTime(event.startTime);
-	          calendarUrl +=  true ? this.formatEndDate(event.endTime) : this.formatTime(event.endTime);
+	          calendarUrl += "&dates=" + (!useDateTime ? this.formatStartDate(event.startTime) : this.formatDateTime(event.startTime));
+	          calendarUrl += "/" + (!useDateTime ? this.formatEndDate(event.endTime) : this.formatDateTime(event.endTime));
 	          calendarUrl += "&location=" + encodeURIComponent(event.location);
 	          calendarUrl += "&text=" + encodeURIComponent(event.title);
 	          calendarUrl += "&details=" + encodeURIComponent(formattedDescription);
@@ -539,23 +539,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	          var duration = this.calculateDuration(event.startTime, event.endTime);
 	          calendarUrl = "https://calendar.yahoo.com/?v=60&view=d&type=20";
 	          calendarUrl += "&title=" + encodeURIComponent(event.title);
-	          calendarUrl +=  true ? this.formatStartDate(event.startTime) : this.formatTime(event.startTime);
-	          calendarUrl += "&dur=allday";
+	          calendarUrl += "&st=" + this.formatStartDate(event.startTime);
+	          calendarUrl += "&dur=" + (!useDateTime ? "allday" : duration);
 	          // formatStartDate is used intentionally because yahoo interprets an event
 	          //   from 20180101-20180102 as a 2 day long event instead of 1 day like the others
-	          calendarUrl +=  true ? this.formatStartDate(event.endTime) : this.formatTime(event.endTime);
+	          calendarUrl += "&et=" + (!useDateTime ? this.formatEndDate(event.endTime) : this.formatDateTime(event.endTime));
 	          calendarUrl += "&desc=" + encodeURIComponent(formattedDescription);
 	          calendarUrl += "&in_loc=" + encodeURIComponent(event.location);
 	          break;
 
 	        case "outlookcom":
 	          calendarUrl = "https://outlook.live.com/owa/?rru=addevent";
-	          calendarUrl +=  true ? this.formatStartDate(event.startTime) : this.formatTime(event.startTime);
-	          calendarUrl +=  true ? this.formatEndDate(event.endTime) : this.formatTime(event.endTime);
+	          calendarUrl += "&startdt=" + (!useDateTime ? this.formatStartDate(event.startTime) : this.formatDateTime(event.startTime));
+	          calendarUrl += "&enddt=" + (!useDateTime ? this.formatEndDate(event.endTime) : this.formatDateTime(event.endTime));
 	          calendarUrl += "&subject=" + encodeURIComponent(event.title);
 	          calendarUrl += "&location=" + encodeURIComponent(event.location);
 	          calendarUrl += "&body=" + encodeURIComponent(event.description);
-	          calendarUrl += "&allday=false";
+	          calendarUrl += "&allday=" + !useDateTime;
 	          calendarUrl += "&uid=" + this.getRandomKey();
 	          calendarUrl += "&path=/calendar/view/Month";
 	          break;
@@ -565,7 +565,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          //   Replacing \n with \\n allows the linebreaks to properly show up as a linebreak
 	          // TODO Find a less hacky way to resolve this
 	          formattedDescription = event.description.replace(/\n/gm, '\\n').replace(/(\\n)[\s\t]+/gm, "\\n");
-	          calendarUrl = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", "URL:" + document.URL,  true ? this.formatStartDate(event.startTime) : this.formatTime(event.startTime),  true ? this.formatEndDate(event.endTime) : this.formatTime(event.endTime), "SUMMARY:" + event.title, "DESCRIPTION:" + formattedDescription, "LOCATION:" + event.location, "END:VEVENT", "END:VCALENDAR"].join("\n");
+	          calendarUrl = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", "URL:" + document.URL, "DTSTART:" + (!useDateTime ? this.formatStartDate(event.startTime) : this.formatDateTime(event.startTime)), "DTEND:" + (!useDateTime ? this.formatEndDate(event.endTime) : this.formatDateTime(event.endTime)), "SUMMARY:" + event.title, "DESCRIPTION:" + formattedDescription, "LOCATION:" + event.location, "END:VEVENT", "END:VCALENDAR"].join("\n");
 
 	          if (!isCrappyIE && this.isMobile()) {
 	            calendarUrl = encodeURI("data:text/calendar;charset=utf8," + calendarUrl);
